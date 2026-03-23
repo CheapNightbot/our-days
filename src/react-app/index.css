@@ -110,6 +110,6 @@
 
 @layer base {
     body {
-        @apply bg-background text-foreground min-w-dvw min-h-dvh;
+        @apply bg-background text-foreground min-w-screen min-h-dvh;
     }
 }
