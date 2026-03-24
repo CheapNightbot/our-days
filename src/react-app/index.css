@@ -112,4 +112,8 @@
     body {
         @apply bg-background text-foreground min-w-screen min-h-dvh;
     }
+
+    button {
+        @apply hover:cursor-pointer;
+    }
 }
