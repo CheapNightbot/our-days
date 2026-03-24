@@ -36,9 +36,9 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
     const { monthName, weekdays, padding, days } = useMemo(() => {
         const monthName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month, 1));
 
-        // Generate weekdays dynamically based on the first week of this month
+        // Generate weekdays dynamically
         const weekdays = Array.from({ length: 7 }, (_, i) => {
-            return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(year, month, 1 + i));
+            return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(year, 1, 1 + i));
         });
 
         return {
