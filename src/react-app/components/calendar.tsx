@@ -50,7 +50,7 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
     }, [year, month, locale]);
 
     return (
-        <div className="border rounded-md overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="border rounded-md overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-card/60">
             {/* Month Header */}
             <h1 className="text-center font-bold text-lg border-b p-2 bg-muted/50">
                 {monthName}
