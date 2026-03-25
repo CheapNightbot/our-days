@@ -102,7 +102,7 @@ const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCard
                     const isActive = activeDate === dateString;
 
                     return (
-                        <div key={day} className="group relative aspect-square pt-1.5 m-1.5">
+                        <div key={day} className="relative pt-1.5 m-1.5">
                             {/* Emoji Reaction Animation */}
                             {animatingDay && animatingDay.day === day && (
                                 <span className="absolute inset-0 flex items-center justify-center pointer-events-none animate-bounce z-30">
@@ -113,7 +113,7 @@ const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCard
                             {/* Day Number Button */}
                             <button
                                 onClick={() => toggleDayPicker(day)}
-                                className={`w-full h-full py-5 text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
+                                className={`w-full h-full py-2.5 text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
                                     ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                                 aria-label={`${monthName} ${day}`}
                                 aria-expanded={isActive}
@@ -126,12 +126,7 @@ const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCard
                                 <div
                                     // Prevent clicks inside from closing
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute left-1/2 -translate-x-1/2 top-full
-                                flex gap-0.5 opacity-0 invisible scale-90
-                                group-hover:opacity-100 group-hover:visible group-hover:scale-100
-                                group-focus-within:opacity-100 group-focus-within:visible group-focus-within:scale-100 mt-0.5
-                                transition-all duration-200 ease-in-out z-20
-                                pointer-events-none group-hover:pointer-events-auto"
+                                    className="absolute left-1/2 -translate-x-1/2 top-full mt-1 animate-in slide-in-from-top-50 fade-in-50 transition-all duration-300 ease-in-out z-20"
                                 >
                                     <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1.5">
                                         {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
