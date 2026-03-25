@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 
+interface CalendarProps {
+    year: number;
+}
+
 // --- Helper Functions  ---
 
 // Gets the user's browser locale automatically
@@ -87,8 +91,7 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
 
 // --- Main Component: Full Year Calendar ---
 
-export default function Calendar() {
-    const currentYear = new Date().getFullYear();
+export default function Calendar({ year }: CalendarProps) {
     const locale = getUserLocale();
 
     return (
@@ -96,7 +99,7 @@ export default function Calendar() {
             {[...Array(12)].map((_, month) => (
                 <MonthCard
                     key={month}
-                    year={currentYear}
+                    year={year}
                     month={month}
                     locale={locale}
                 />
