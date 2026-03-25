@@ -54,7 +54,7 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
     }, [year, month, locale]);
 
     return (
-        <div className="border rounded-md overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-card/60">
+        <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60">
             {/* Month Header */}
             <h1 className="text-center font-bold text-lg border-b p-2 bg-muted/50">
                 {monthName}
@@ -78,10 +78,19 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
                 {days.map((day) => (
                     <button
                         key={day}
-                        className="aspect-square text-center hover:bg-accent hover:text-accent-foreground rounded-full m-1 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="group relative aspect-square text-center hover:bg-accent hover:text-accent-foreground rounded-full m-1 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                         aria-label={`${monthName} ${day}`}
                     >
                         {day}
+                        <div
+                            className="absolute z-2 left-0 bottom-0 -translate-x-16 translate-y-1/2 opacity-0 invisible scale-90 group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:translate-y-full group-focus-visible:scale-100 group-focus-visible:opacity-100 group-focus-visible:visible group-focus-visible:translate-y-full transition-all duration-200 ease-in-out flex justify-center gap-2 border border-muted rounded-md px-3 py-1 bg-sidebar"
+                        >
+                            {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
+                                <button key={emoji} className="hover:scale-125 transition-transform">
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
                     </button>
                 ))}
             </div>
