@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface CalendarProps {
     year: number;
@@ -33,9 +33,11 @@ interface MonthCardProps {
     year: number;
     month: number; // 0-11
     locale: string;
+    activeDate: string | null;
+    setActiveDate: (date: string | null) => void;
 }
 
-const MonthCard = ({ year, month, locale }: MonthCardProps) => {
+const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCardProps) => {
     // Memoize calculations so they don't run unnecessarily
     const { monthName, weekdays, padding, days } = useMemo(() => {
         const monthName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month, 1));
@@ -52,6 +54,25 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
             days: getDaysArray(year, month),
         };
     }, [year, month, locale]);
+
+    const [animatingDay, setAnimatingDay] = useState<{ day: number, emoji: string } | null>(null);
+
+    const handleEmojiClick = (day: number, emoji: string) => {
+        // Trigger animation
+        setAnimatingDay({ day, emoji });
+        setTimeout(() => setAnimatingDay(null), 600);
+
+        // Close the picker after reaction
+        setActiveDate(null);
+    };
+
+    const toggleDayPicker = (day: number) => {
+        // Create date string for this day
+        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // If clicking the same date, close it. Otherwise, open it.
+        setActiveDate(activeDate === dateString ? null : dateString);
+    };
 
     return (
         <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60 min-h-81.5">
@@ -75,42 +96,60 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
                 ))}
 
                 {/* Actual Days */}
-                {days.map((day) => (
-                    <div
-                        key={day}
-                        className="group relative aspect-square pt-1.5 m-1.5"
-                    >
-                        {/* Day Number Button */}
-                        <button
-                            className="w-full h-full text-center hover:bg-accent hover:text-accent-foreground rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center"
-                            aria-label={`${monthName} ${day}`}
-                        >
-                            {day}
-                        </button>
+                {days.map((day) => {
+                    // Create date string for this specific day
+                    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const isActive = activeDate === dateString;
 
-                        {/* Emoji Picker for Mood - only shows on hover/focus */}
-                        <div
-                            className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5
-                       flex gap-0.5 opacity-0 invisible scale-90
-                       group-hover:opacity-100 group-hover:visible group-hover:scale-100
-                       group-focus-within:opacity-100 group-focus-within:visible group-focus-within:scale-100
-                       transition-all duration-200 ease-in-out z-20
-                       pointer-events-none group-hover:pointer-events-auto"
-                        >
-                            <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1">
-                                {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
-                                    <button
-                                        key={emoji}
-                                        className="hover:scale-125 transition-transform text-xs"
-                                        aria-label={`React with ${emoji}`}
-                                    >
-                                        {emoji}
-                                    </button>
-                                ))}
-                            </div>
+                    return (
+                        <div key={day} className="group relative aspect-square pt-1.5 m-1.5">
+                            {/* Emoji Reaction Animation */}
+                            {animatingDay && animatingDay.day === day && (
+                                <span className="absolute inset-0 flex items-center justify-center pointer-events-none animate-bounce z-30">
+                                    <span className="text-3xl animate-in fade-in-50">{animatingDay.emoji}</span>
+                                </span>
+                            )}
+
+                            {/* Day Number Button */}
+                            <button
+                                onClick={() => toggleDayPicker(day)}
+                                className={`w-full h-full py-5 text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
+                                    ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
+                                aria-label={`${monthName} ${day}`}
+                                aria-expanded={isActive}
+                            >
+                                {day}
+                            </button>
+
+                            {/* Emoji Picker - Only show for active day */}
+                            {isActive && (
+                                <div
+                                    // Prevent clicks inside from closing
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute left-1/2 -translate-x-1/2 top-full
+                                flex gap-0.5 opacity-0 invisible scale-90
+                                group-hover:opacity-100 group-hover:visible group-hover:scale-100
+                                group-focus-within:opacity-100 group-focus-within:visible group-focus-within:scale-100 mt-0.5
+                                transition-all duration-200 ease-in-out z-20
+                                pointer-events-none group-hover:pointer-events-auto"
+                                >
+                                    <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1.5">
+                                        {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
+                                            <button
+                                                key={emoji}
+                                                onClick={() => handleEmojiClick(day, emoji)}
+                                                className="hover:scale-125 transition-transform active:scale-100"
+                                                aria-label={`Today's mood was: ${emoji}`}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
@@ -121,6 +160,9 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
 export default function Calendar({ year }: CalendarProps) {
     const locale = getUserLocale();
 
+    const [activeDate, setActiveDate] = useState<string | null>(null); // Format: "YYYY-MM-DD"
+
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 py-4 max-w-6xl mx-auto">
             {[...Array(12)].map((_, month) => (
@@ -129,6 +171,8 @@ export default function Calendar({ year }: CalendarProps) {
                     year={year}
                     month={month}
                     locale={locale}
+                    activeDate={activeDate}
+                    setActiveDate={setActiveDate}
                 />
             ))}
         </div>
