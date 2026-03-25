@@ -33,9 +33,9 @@ export default function Header({
                         onClick={onPrevYear}
                         disabled={!canGoPrev}
                         title={!canGoPrev ? "Our journey starts in 2026 ✧" : ""}
-                        className={`p-1 rounded-full
+                        className={`p-1 rounded-full transition-transform
                             ${canGoPrev
-                                ? 'hover:bg-secondary text-secondary-foreground'
+                                ? 'hover:bg-secondary text-secondary-foreground active:scale-90'
                                 : 'text-muted-foreground cursor-not-allowed opacity-50'
                             }`}
                         aria-label="Previous year"
@@ -56,9 +56,9 @@ export default function Header({
                         onClick={onNextYear}
                         disabled={!canGoNext}
                         title={!canGoNext ? "This year hasn't bloomed yet 🌸" : ""}
-                        className={`p-1 rounded-full
+                        className={`p-1 rounded-full transition-transform
                             ${canGoNext
-                                ? 'hover:bg-secondary text-secondary-foreground'
+                                ? 'hover:bg-secondary text-secondary-foreground active:scale-90'
                                 : 'text-muted-foreground cursor-not-allowed opacity-50'
                             }`}
                         aria-label="Next year"

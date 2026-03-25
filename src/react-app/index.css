@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 :root {
     /* Background */
@@ -151,6 +152,6 @@
     }
 
     button {
-        @apply hover:cursor-pointer transition-[colors,transform] ease-in-out duration-300 active:scale-90;
+        @apply hover:cursor-pointer transition-colors ease-in-out duration-300;
     }
 }
