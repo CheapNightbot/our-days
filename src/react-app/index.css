@@ -138,11 +138,19 @@
 }
 
 @layer base {
+    * {
+        @apply select-none;
+    }
+
+    *::selection {
+        @apply text-background bg-primary;
+    }
+
     body {
         @apply bg-background text-foreground min-w-full min-h-dvh;
     }
 
     button {
-        @apply hover:cursor-pointer;
+        @apply hover:cursor-pointer transition-[colors,transform] ease-in-out duration-300 active:scale-90;
     }
 }
