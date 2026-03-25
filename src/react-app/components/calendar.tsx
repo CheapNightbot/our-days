@@ -54,7 +54,7 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
     }, [year, month, locale]);
 
     return (
-        <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60">
+        <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60 min-h-81.5">
             {/* Month Header */}
             <h1 className="text-center font-bold text-lg border-b p-2 bg-muted/50">
                 {monthName}
@@ -76,22 +76,40 @@ const MonthCard = ({ year, month, locale }: MonthCardProps) => {
 
                 {/* Actual Days */}
                 {days.map((day) => (
-                    <button
+                    <div
                         key={day}
-                        className="group relative aspect-square text-center hover:bg-accent hover:text-accent-foreground rounded-full m-1 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-                        aria-label={`${monthName} ${day}`}
+                        className="group relative aspect-square pt-1.5 m-1.5"
                     >
-                        {day}
-                        <div
-                            className="absolute z-2 left-0 bottom-0 -translate-x-16 translate-y-1/2 opacity-0 invisible scale-90 group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:translate-y-full group-focus-visible:scale-100 group-focus-visible:opacity-100 group-focus-visible:visible group-focus-visible:translate-y-full transition-all duration-200 ease-in-out flex justify-center gap-2 border border-muted rounded-md px-3 py-1 bg-sidebar"
+                        {/* Day Number Button */}
+                        <button
+                            className="w-full h-full text-center hover:bg-accent hover:text-accent-foreground rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center"
+                            aria-label={`${monthName} ${day}`}
                         >
-                            {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
-                                <button key={emoji} className="hover:scale-125 transition-transform">
-                                    {emoji}
-                                </button>
-                            ))}
+                            {day}
+                        </button>
+
+                        {/* Emoji Picker for Mood - only shows on hover/focus */}
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5
+                       flex gap-0.5 opacity-0 invisible scale-90
+                       group-hover:opacity-100 group-hover:visible group-hover:scale-100
+                       group-focus-within:opacity-100 group-focus-within:visible group-focus-within:scale-100
+                       transition-all duration-200 ease-in-out z-20
+                       pointer-events-none group-hover:pointer-events-auto"
+                        >
+                            <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1">
+                                {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        className="hover:scale-125 transition-transform text-xs"
+                                        aria-label={`React with ${emoji}`}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </button>
+                    </div>
                 ))}
             </div>
         </div>
