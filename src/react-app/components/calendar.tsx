@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, Dispatch, SetStateAction, } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState, } from 'react';
 import { getDaysArray, getPaddingArray, getUserLocale } from '../utils';
 
 interface CalendarProps {
@@ -114,7 +114,7 @@ const MonthCard = ({
                             {/* Day Number Button */}
                             <button
                                 onClick={() => toggleDayPicker(day)}
-                                className={`w-full h-full aspect-square text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
+                                className={`group w-full h-full aspect-square text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
                                     ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                                 aria-label={`${monthName} ${day}`}
                                 aria-expanded={isActive}
@@ -122,7 +122,7 @@ const MonthCard = ({
                                 {day}
                                 {/* Show saved reaction for this day */}
                                 {reactions[dateString] && (
-                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70">
+                                    <span className="group-hover:scale-110 group-hover:opacity-100 transition-all duration-200 ease-in-out absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70">
                                         {reactions[dateString]}
                                     </span>
                                 )}
