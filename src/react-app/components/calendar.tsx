@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Dispatch, SetStateAction, } from 'react';
 import { getDaysArray, getPaddingArray, getUserLocale } from '../utils';
 
 interface CalendarProps {
@@ -13,9 +13,19 @@ interface MonthCardProps {
     locale: string;
     activeDate: string | null;
     setActiveDate: (date: string | null) => void;
+    reactions: Record<string, string>;
+    setReactions: Dispatch<SetStateAction<Record<string, string>>>;
 }
 
-const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCardProps) => {
+const MonthCard = ({
+    year,
+    month,
+    locale,
+    activeDate,
+    setActiveDate,
+    reactions,
+    setReactions,
+}: MonthCardProps) => {
     // Memoize calculations so they don't run unnecessarily
     const { monthName, weekdays, padding, days } = useMemo(() => {
         const monthName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month, 1));
@@ -36,12 +46,25 @@ const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCard
     const [animatingDay, setAnimatingDay] = useState<{ day: number, emoji: string } | null>(null);
 
     const handleEmojiClick = (day: number, emoji: string) => {
+        // Create the full date string FIRST
+        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
         // Trigger animation
         setAnimatingDay({ day, emoji });
         setTimeout(() => setAnimatingDay(null), 600);
 
         // Close the picker after reaction
         setActiveDate(null);
+
+        // Update reactions
+        setReactions((prev: Record<string, string>) => {
+            // Toggle: if same emoji, remove it. Otherwise, set new one.
+            if (prev[dateString] === emoji) {
+                const { [dateString]: _, ...rest } = prev;
+                return rest;
+            }
+            return { ...prev, [dateString]: emoji };
+        });
     };
 
     const toggleDayPicker = (day: number) => {
@@ -91,12 +114,18 @@ const MonthCard = ({ year, month, locale, activeDate, setActiveDate }: MonthCard
                             {/* Day Number Button */}
                             <button
                                 onClick={() => toggleDayPicker(day)}
-                                className={`w-full h-full py-2.5 text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
+                                className={`w-full h-full aspect-square text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
                                     ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                                 aria-label={`${monthName} ${day}`}
                                 aria-expanded={isActive}
                             >
                                 {day}
+                                {/* Show saved reaction for this day */}
+                                {reactions[dateString] && (
+                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70">
+                                        {reactions[dateString]}
+                                    </span>
+                                )}
                             </button>
 
                             {/* Emoji Picker - Only show for active day */}
@@ -134,7 +163,22 @@ export default function Calendar({ year }: CalendarProps) {
     const locale = getUserLocale();
 
     const [activeDate, setActiveDate] = useState<string | null>(null); // Format: "YYYY-MM-DD"
+    const [reactions, setReactions] = useState<Record<string, string>>(() => {
+        const saved = localStorage.getItem("mood-reactions");
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to load reactions", e);
+            }
+        }
+        return {}; // fallback
+    });
 
+    // Save to localStorage whenever reactions change
+    useEffect(() => {
+        localStorage.setItem("mood-reactions", JSON.stringify(reactions));
+    }, [reactions]);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 py-4 max-w-6xl mx-auto">
@@ -146,6 +190,8 @@ export default function Calendar({ year }: CalendarProps) {
                     locale={locale}
                     activeDate={activeDate}
                     setActiveDate={setActiveDate}
+                    reactions={reactions}
+                    setReactions={setReactions}
                 />
             ))}
         </div>
