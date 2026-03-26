@@ -43,14 +43,21 @@ const MonthCard = ({
         };
     }, [year, month, locale]);
 
-    const [animatingDay, setAnimatingDay] = useState<{ day: number, emoji: string } | null>(null);
+    const [animatingDay, setAnimatingDay] = useState<{
+        day: number;
+        emoji: string;
+        action: 'add' | 'remove';
+    } | null>(null);
 
     const handleEmojiClick = (day: number, emoji: string) => {
         // Create the full date string FIRST
         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+        // Determine if this is add or remove
+        const isRemoving = reactions[dateString] === emoji;
+
         // Trigger animation
-        setAnimatingDay({ day, emoji });
+        setAnimatingDay({ day, emoji, action: isRemoving ? 'remove' : 'add' });
         setTimeout(() => setAnimatingDay(null), 600);
 
         // Close the picker after reaction
@@ -106,8 +113,15 @@ const MonthCard = ({
                         <div key={day} className="relative pt-1.5 m-1.5">
                             {/* Emoji Reaction Animation */}
                             {animatingDay && animatingDay.day === day && (
-                                <span className="absolute inset-0 flex items-center justify-center pointer-events-none animate-bounce z-30">
-                                    <span className="text-3xl animate-in fade-in-50">{animatingDay.emoji}</span>
+                                <span className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30
+                                    ${animatingDay.action === 'add'
+                                        ? 'animate-in zoom-in-50 fade-in-0 duration-500 ease-in-out'
+                                        : 'hidden'
+                                    }`}>
+                                    <span className={`text-3xl transition-all duration-300
+                                        ${animatingDay.action === 'remove' ? 'scale-50' : 'scale-100'}`}>
+                                        {animatingDay.emoji}
+                                    </span>
                                 </span>
                             )}
 
@@ -122,7 +136,7 @@ const MonthCard = ({
                                 {day}
                                 {/* Show saved reaction for this day */}
                                 {reactions[dateString] && (
-                                    <span className="group-hover:scale-110 group-hover:opacity-100 transition-all duration-200 ease-in-out absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70">
+                                    <span className="group-hover:scale-110 group-hover:opacity-100 transition-all duration-500 ease-in-out absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70 animate-in blur-in">
                                         {reactions[dateString]}
                                     </span>
                                 )}
