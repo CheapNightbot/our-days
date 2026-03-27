@@ -33,7 +33,7 @@
 		{
 			"binding": "DB",
 			"database_name": "our-days-db",
-			"database_id": "${D1_DATABASE_ID}"
+			"database_id": ""
 		}
 	],
 	/**
