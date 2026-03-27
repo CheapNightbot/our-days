@@ -3,8 +3,17 @@ import { cors } from "hono/cors";
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Enable CORS for the frontend
-app.use("/*", cors());
+// Enable CORS
+app.use('*', async (c, next) => {
+    const corsMiddlewareHandler = cors({
+        origin: c.env.CORS_ORIGINS,
+        credentials: true,
+        allowHeaders: ['Content-Type'],
+        maxAge: 3600,
+        allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    });
+    return corsMiddlewareHandler(c, next);
+});
 
 // POST `/api/reaction` - Add or Update a reaction
 app.post("/api/reaction", async (c) => {
