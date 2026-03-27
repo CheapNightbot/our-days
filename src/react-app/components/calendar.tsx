@@ -194,6 +194,19 @@ export default function Calendar({ year }: CalendarProps) {
         localStorage.setItem("mood-reactions", JSON.stringify(reactions));
     }, [reactions]);
 
+    // Close emoji picker when click outside
+    useEffect(() => {
+        if (!activeDate) return;
+
+        const handleClickOutside = () => setActiveDate(null);
+        // Delay slightly to avoid closing immediately when opening
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutside);
+        }, 100);
+
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [activeDate, setActiveDate]);
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 py-4 max-w-6xl mx-auto">
             {[...Array(12)].map((_, month) => (
