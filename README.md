@@ -92,36 +92,6 @@ npm run deploy
 - **One reaction per user per day** - Prevents spam while allowing mood changes
 - **No personal data collected** - Only emoji reactions and anonymous tokens
 
-## 🌐 Deployment Guide
-
-### 1. Create D1 Database
-
-```bash
-# Login to Cloudflare
-npx wrangler login
-
-# Create database
-npx wrangler d1 create our-days-db
-
-```
-- Rename `.dev.vars.example` to `.dev.vars` and replace `YOUR_DATABASE_ID` with the database_id from the output.
-
-### 2. Initialize Database
-
-```bash
-# The database you created in above step
-npm run db:init
-```
-
-### 3. Deploy
-
-```bash
-# Build and deploy
-npm run deploy
-```
-
-If everything went well, you should be able to see workers live URL for your app in the terminal output! 🎉
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
