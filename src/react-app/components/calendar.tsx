@@ -1,9 +1,7 @@
 import {
-    Dispatch,
-    SetStateAction,
     useEffect,
     useMemo,
-    useState,
+    useState
 } from 'react';
 import {
     getDaysArray,
@@ -25,8 +23,8 @@ interface MonthCardProps {
     locale: string;
     activeDate: string | null;
     setActiveDate: (date: string | null) => void;
-    reactions: Record<string, string>;
-    setReactions: Dispatch<SetStateAction<Record<string, string>>>;
+    dailyReactions: Record<string, { emoji: string; count: number }[]>;
+    onReactionChange: (date: string, emoji: string, action: 'add' | 'remove') => Promise<void>;
 }
 
 const MonthCard = ({
@@ -35,8 +33,8 @@ const MonthCard = ({
     locale,
     activeDate,
     setActiveDate,
-    reactions,
-    setReactions,
+    dailyReactions,
+    onReactionChange,
 }: MonthCardProps) => {
     // Memoize calculations so they don't run unnecessarily
     const { monthName, weekdays, padding, days } = useMemo(() => {
@@ -60,14 +58,13 @@ const MonthCard = ({
         emoji: string;
         action: 'add' | 'remove';
     } | null>(null);
-    const [serverCounts, setServerCounts] = useState<Record<string, { emoji: string; count: number }[]>>({});
 
     const handleEmojiClick = async (day: number, emoji: string) => {
         // Create the full date string FIRST
         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
         // Determine if this is add or remove
-        const isRemoving = reactions[dateString] === emoji;
+        const isRemoving = dailyReactions[dateString]?.some(r => r.emoji === emoji);
 
         // Trigger animation
         setAnimatingDay({ day, emoji, action: isRemoving ? 'remove' : 'add' });
@@ -76,21 +73,7 @@ const MonthCard = ({
         // Close the picker after reaction
         setActiveDate(null);
 
-        // Update reactions (local state)
-        setReactions((prev: Record<string, string>) => {
-            // Toggle: if same emoji, remove it. Otherwise, set new one.
-            if (prev[dateString] === emoji) {
-                const { [dateString]: _, ...rest } = prev;
-                return rest;
-            }
-            return { ...prev, [dateString]: emoji };
-        });
-
-        // Sync reactions to backend
-        const success = await submitReaction(dateString, emoji, isRemoving ? "remove" : "add");
-        if (!success) {
-            console.warn("Reaction(s) saved locally only ~");
-        }
+        await onReactionChange(dateString, emoji, isRemoving ? 'remove' : 'add');
     };
 
     const toggleDayPicker = (day: number) => {
@@ -100,28 +83,6 @@ const MonthCard = ({
         // If clicking the same date, close it. Otherwise, open it.
         setActiveDate(activeDate === dateString ? null : dateString);
     };
-
-    // Fetch counts when component mounts or date changes
-    useEffect(() => {
-        const fetchCounts = async () => {
-            // Only fetch for days in the current year that have local reactions
-            const datesWithReactions = Object.keys(reactions).filter(d => d.startsWith(year.toString()));
-
-            for (const date of datesWithReactions) {
-                try {
-                    const res = await fetch(`/api/reactions?date=${date}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setServerCounts(prev => ({ ...prev, [date]: data.reactions }));
-                    }
-                } catch (e) {
-                    console.warn(`Failed to fetch counts for ${date}`, e);
-                }
-            }
-        };
-
-        fetchCounts();
-    }, [year, reactions]);
 
     return (
         <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60 min-h-81.5">
@@ -182,16 +143,20 @@ const MonthCard = ({
                             >
                                 {day}
                                 {/* Show saved reaction for this day */}
-                                {serverCounts[dateString]?.slice(0, 2).map((item, i) => (
-                                    <span
-                                        key={item.emoji}
-                                        className={`absolute text-xs opacity-70 animate-in blur-in
-                                                ${i === 0 ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6' :
-                                                'bottom-0 left-1/2 translate-x-2 translate-y-1/6 text-[10px]'}`}
-                                    >
-                                        {item.emoji}
-                                    </span>
-                                ))}
+                                {dailyReactions[dateString]?.length > 0 && (
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 flex gap-0.5">
+                                        {dailyReactions[dateString].slice(0, 2).map((item, i) => (
+                                            <span
+                                                key={item.emoji}
+                                                className={`text-xs opacity-70 animate-in blur-in transition-all
+                                                     ${i === 0 ? 'scale-100' : 'scale-90 opacity-60'}`}
+                                                title={`${item.emoji}: ${item.count} reactions`}
+                                            >
+                                                {item.emoji}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </button>
 
                             {/* Emoji Picker - Only show for TODAY and active day */}
@@ -204,7 +169,7 @@ const MonthCard = ({
                                     <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1.5">
                                         {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => {
                                             // Find count for this emoji on this date
-                                            const countData = serverCounts[dateString]?.find(r => r.emoji === emoji);
+                                            const countData = dailyReactions[dateString]?.find(r => r.emoji === emoji);
                                             const count = countData?.count || 0;
 
                                             return (
@@ -238,24 +203,38 @@ const MonthCard = ({
 
 export default function Calendar({ year }: CalendarProps) {
     const locale = getUserLocale();
-
     const [activeDate, setActiveDate] = useState<string | null>(null); // Format: "YYYY-MM-DD"
-    const [reactions, setReactions] = useState<Record<string, string>>(() => {
-        const saved = localStorage.getItem("mood-reactions");
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to load reactions", e);
+    const [dailyReactions, setDailyReactions] = useState<Record<string, { emoji: string; count: number }[]>>({});
+
+    const onReactionChange = async (date: string, emoji: string, action: 'add' | 'remove') => {
+        // Sync to backend
+        const success = await submitReaction(date, emoji, action);
+        if (success) {
+            // Refresh counts for this date
+            const res = await fetch(`/api/reactions?date=${date}`);
+            if (res.ok) {
+                const data = await res.json();
+                setDailyReactions(prev => ({ ...prev, [date]: data.reactions }));
             }
         }
-        return {}; // fallback
-    });
+    }
 
-    // Save to localStorage whenever reactions change
+    // Fetch all reactions for the `year`
     useEffect(() => {
-        localStorage.setItem("mood-reactions", JSON.stringify(reactions));
-    }, [reactions]);
+        const fetchYearReactions = async () => {
+            try {
+                const res = await fetch(`/api/reactions/bulk?year=${year}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setDailyReactions(data.reactions); // data.reactions is already grouped by date!
+                }
+            } catch (e) {
+                console.error("Failed to fetch year reactions", e);
+            }
+        };
+
+        fetchYearReactions();
+    }, [year]);
 
     // Close emoji picker when click outside
     useEffect(() => {
@@ -280,8 +259,8 @@ export default function Calendar({ year }: CalendarProps) {
                     locale={locale}
                     activeDate={activeDate}
                     setActiveDate={setActiveDate}
-                    reactions={reactions}
-                    setReactions={setReactions}
+                    dailyReactions={dailyReactions}
+                    onReactionChange={onReactionChange}
                 />
             ))}
         </div>

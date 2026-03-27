@@ -119,5 +119,49 @@ app.delete("/api/reaction", async (c) => {
     }
 });
 
+// GET `/api/reactions/bulk?year=2026` - Fetch all reactions for entire year in ONE request!
+app.get('/api/reactions/bulk', async (c) => {
+    try {
+        const year = c.req.query('year');
+        if (!year) {
+            return c.json({ error: 'Year parameter required' }, 400);
+        }
+
+        const db = c.env.DB;
+
+        // Fetch ALL reactions for the year in ONE query
+        const results = await db.prepare(`
+            SELECT
+                r.date,
+                e.emoji,
+                COUNT(*) as count
+            FROM reactions r
+            JOIN emojis e ON r.emoji_id = e.id
+            WHERE r.date LIKE ?
+            GROUP BY r.date, e.emoji
+            ORDER BY count DESC
+        `).bind(`${year}%`).all();
+
+        // Group by date
+        const grouped: Record<string, { emoji: string; count: number }[]> = {};
+        for (const row of results.results || []) {
+            const date = row.date as string;
+            if (!grouped[date]) {
+                grouped[date] = [];
+            }
+            grouped[date].push({
+                emoji: row.emoji as string,
+                count: row.count as number
+            });
+        }
+
+        return c.json({ year, reactions: grouped });
+
+    } catch (error) {
+        console.error('Bulk fetch error:', error);
+        return c.json({ error: 'Server error' }, 500);
+    }
+});
+
 
 export default app;
