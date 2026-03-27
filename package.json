@@ -17,8 +17,8 @@
 		"db:init:local": "wrangler d1 execute our-days-db --local --file=./schema.sql",
 		"db:reset:local": "wrangler d1 execute our-days-db --local --file=./schema.sql --force",
 
-		"db:init": "wrangler d1 execute our-days-db --file=./schema.sql",
-		"db:reset": "wrangler d1 execute our-days-db --file=./schema.sql --force",
+		"db:init": "wrangler d1 execute our-days-db --remote --file=./schema.sql",
+		"db:reset": "wrangler d1 execute our-days-db --remote --file=./schema.sql --force",
 
 		"cf-typegen": "wrangler types",
 		"lint": "eslint .",
