@@ -47,6 +47,7 @@ const submitReaction = async (
 
         return true;
     } catch (error) {
+        console.error('API error:', error);
         return false;
     }
 };

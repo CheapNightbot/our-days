@@ -69,7 +69,7 @@ app.get("/api/reactions", async (c) => {
         }
 
         // Get current user's token
-        let token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
+        const token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
         let currentTokenHash = null;
 
         if (token) {
@@ -117,7 +117,7 @@ app.delete("/api/reaction", async (c) => {
         const { date } = await c.req.json();
 
         // Get token from cookie
-        let token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
+        const token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
         if (!token) return c.json({ error: 'No token' }, 401);
 
         // Hash token
