@@ -1,5 +1,2 @@
 # Allowed CORS origin (your frontend URL)
 CORS_ORIGINS=http://localhost:5173
-
-# Cloudflare D1 Database ID
-D1_DATABASE_ID=YOUR_DATABASE_ID
