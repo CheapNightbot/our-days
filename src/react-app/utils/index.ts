@@ -19,11 +19,19 @@ const getPaddingArray = (year: number, month: number) => {
     return Array.from({ length: padding }, (_, i) => i);
 };
 
+// Generates today's date in YYYY-MM-DD
+const getToday = (dateString: string) => {
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return dateString === todayString;
+};
+
 
 export {
     getDaysArray,
     getDaysInMonth,
     getFirstDayOfMonth,
     getPaddingArray,
-    getUserLocale
+    getToday,
+    getUserLocale,
 };

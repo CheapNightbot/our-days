@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useMemo, useState, } from 'react';
-import { getDaysArray, getPaddingArray, getUserLocale } from '../utils';
+import { getDaysArray, getPaddingArray, getToday, getUserLocale } from '../utils';
 
 interface CalendarProps {
     year: number;
@@ -108,6 +108,8 @@ const MonthCard = ({
                     // Create date string for this specific day
                     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const isActive = activeDate === dateString;
+                    const isToday = getToday(dateString);
+                    const isPast = new Date(dateString) < new Date(new Date().setHours(0, 0, 0, 0));
 
                     return (
                         <div key={day} className="relative pt-1.5 m-1.5">
@@ -127,10 +129,14 @@ const MonthCard = ({
 
                             {/* Day Number Button */}
                             <button
-                                onClick={() => toggleDayPicker(day)}
+                                onClick={() => isToday && toggleDayPicker(day)}
+                                disabled={!isToday}
                                 className={`group w-full h-full aspect-square text-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center
-                                    ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
-                                aria-label={`${monthName} ${day}`}
+                                    ${isActive ? 'bg-primary text-primary-foreground' : ''}
+                                    ${isToday ? 'hover:bg-accent hover:text-accent-foreground cursor-pointer border border-border' : 'cursor-default opacity-70'}
+                                    ${isPast ? 'grayscale' : ''}
+                                `}
+                                aria-label={`${monthName} ${day}${isToday ? ' (Today)' : ''}`}
                                 aria-expanded={isActive}
                             >
                                 {day}
@@ -142,8 +148,8 @@ const MonthCard = ({
                                 )}
                             </button>
 
-                            {/* Emoji Picker - Only show for active day */}
-                            {isActive && (
+                            {/* Emoji Picker - Only show for TODAY and active day */}
+                            {isActive && isToday && (
                                 <div
                                     // Prevent clicks inside from closing
                                     onClick={(e) => e.stopPropagation()}
