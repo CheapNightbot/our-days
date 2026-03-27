@@ -68,19 +68,42 @@ app.get("/api/reactions", async (c) => {
             return c.json({ error: "Date parameter required" }, 400);
         }
 
+        // Get current user's token
+        let token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
+        let currentTokenHash = null;
+
+        if (token) {
+            const encoder = new TextEncoder();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+            currentTokenHash = Array.from(new Uint8Array(hashBuffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
         const db = c.env.DB;
 
         // Get counter per emoji for this date
+        // Also which reaction's belong to current user
         const results = await db.prepare(`
-            SELECT e.emoji, COUNT(*) as count
+            SELECT
+                e.emoji,
+                COUNT(*) as count,
+                CASE WHEN r.token_hash = ? THEN 1 ELSE 0 END as is_yours
             FROM reactions r
             JOIN emojis e ON r.emoji_id = e.id
             WHERE r.date = ?
-            GROUP BY e.emoji
+            GROUP BY e.emoji, r.token_hash = ?
             ORDER BY count DESC
-        `).bind(date).all();
+        `).bind(currentTokenHash, date, currentTokenHash).all();
 
-        return c.json({ date, reactions: results.results || [] });
+        // Format response
+        const reactions = (results.results || []).map(row => ({
+            emoji: row.emoji as string,
+            count: row.count as number,
+            isYours: (row.is_yours as number) === 1
+        }));
+
+        return c.json({ date, reactions });
 
     } catch (error) {
         console.error("Fetch reactions error:", error);
@@ -123,9 +146,7 @@ app.delete("/api/reaction", async (c) => {
 app.get('/api/reactions/bulk', async (c) => {
     try {
         const year = c.req.query('year');
-        if (!year) {
-            return c.json({ error: 'Year parameter required' }, 400);
-        }
+        if (!year) return c.json({ error: 'Year parameter required' }, 400);
 
         const db = c.env.DB;
 

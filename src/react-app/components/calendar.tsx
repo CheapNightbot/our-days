@@ -23,7 +23,7 @@ interface MonthCardProps {
     locale: string;
     activeDate: string | null;
     setActiveDate: (date: string | null) => void;
-    dailyReactions: Record<string, { emoji: string; count: number }[]>;
+    mergedReactions: Record<string, { emoji: string; count: number; isYours: boolean; }[]>;
     onReactionChange: (date: string, emoji: string, action: 'add' | 'remove') => Promise<void>;
 }
 
@@ -33,7 +33,7 @@ const MonthCard = ({
     locale,
     activeDate,
     setActiveDate,
-    dailyReactions,
+    mergedReactions,
     onReactionChange,
 }: MonthCardProps) => {
     // Memoize calculations so they don't run unnecessarily
@@ -64,7 +64,8 @@ const MonthCard = ({
         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
         // Determine if this is add or remove
-        const isRemoving = dailyReactions[dateString]?.some(r => r.emoji === emoji);
+        const userReaction = mergedReactions[dateString]?.find(r => r.isYours);
+        const isRemoving = userReaction?.emoji === emoji;
 
         // Trigger animation
         setAnimatingDay({ day, emoji, action: isRemoving ? 'remove' : 'add' });
@@ -143,9 +144,9 @@ const MonthCard = ({
                             >
                                 {day}
                                 {/* Show saved reaction for this day */}
-                                {dailyReactions[dateString]?.length > 0 && (
+                                {mergedReactions[dateString]?.length > 0 && (
                                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 flex gap-0.5">
-                                        {dailyReactions[dateString].slice(0, 2).map((item, i) => (
+                                        {mergedReactions[dateString].slice(0, 2).map((item, i) => (
                                             <span
                                                 key={item.emoji}
                                                 className={`text-xs opacity-70 animate-in blur-in transition-all
@@ -169,7 +170,7 @@ const MonthCard = ({
                                     <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1.5">
                                         {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => {
                                             // Find count for this emoji on this date
-                                            const countData = dailyReactions[dateString]?.find(r => r.emoji === emoji);
+                                            const countData = mergedReactions[dateString]?.find(r => r.emoji === emoji);
                                             const count = countData?.count || 0;
 
                                             return (
@@ -204,20 +205,33 @@ const MonthCard = ({
 export default function Calendar({ year }: CalendarProps) {
     const locale = getUserLocale();
     const [activeDate, setActiveDate] = useState<string | null>(null); // Format: "YYYY-MM-DD"
-    const [dailyReactions, setDailyReactions] = useState<Record<string, { emoji: string; count: number }[]>>({});
+    const [dailyReactions, setDailyReactions] = useState<Record<string, { emoji: string; count: number; isYours: boolean; }[]>>({});
+    const [myReaction, setMyReaction] = useState<Record<string, string>>({});
 
     const onReactionChange = async (date: string, emoji: string, action: 'add' | 'remove') => {
-        // Sync to backend
         const success = await submitReaction(date, emoji, action);
         if (success) {
-            // Refresh counts for this date
-            const res = await fetch(`/api/reactions?date=${date}`);
-            if (res.ok) {
-                const data = await res.json();
-                setDailyReactions(prev => ({ ...prev, [date]: data.reactions }));
+            // Update myReaction
+            setMyReaction(prev => {
+                if (action === 'remove') {
+                    const { [date]: _, ...rest } = prev;
+                    return rest;
+                }
+                return { ...prev, [date]: emoji };
+            });
+
+            // Re-fetch ALL data for the year (ensures consistency!)
+            try {
+                const res = await fetch(`/api/reactions/bulk?year=${year}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setDailyReactions(data.reactions);
+                }
+            } catch (e) {
+                console.error("Failed to refresh bulk data", e);
             }
         }
-    }
+    };
 
     // Fetch all reactions for the `year`
     useEffect(() => {
@@ -236,6 +250,23 @@ export default function Calendar({ year }: CalendarProps) {
         fetchYearReactions();
     }, [year]);
 
+    // Load from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('my-reactions');
+        if (saved) {
+            try {
+                setMyReaction(JSON.parse(saved));
+            } catch (e) {
+                console.error('Failed to load my reactions', e);
+            }
+        }
+    }, []);
+
+    // Save to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem('my-reactions', JSON.stringify(myReaction));
+    }, [myReaction]);
+
     // Close emoji picker when click outside
     useEffect(() => {
         if (!activeDate) return;
@@ -249,6 +280,20 @@ export default function Calendar({ year }: CalendarProps) {
         return () => document.removeEventListener('click', handleClickOutside);
     }, [activeDate, setActiveDate]);
 
+    // Merge bulk data with myReaction for display
+    const mergedReactions = useMemo(() => {
+        const merged: Record<string, { emoji: string; count: number; isYours: boolean }[]> = {};
+
+        for (const [date, reactions] of Object.entries(dailyReactions)) {
+            merged[date] = reactions.map(r => ({
+                ...r,
+                isYours: myReaction[date] === r.emoji,  // Mark if this is MY reaction
+            }));
+        }
+
+        return merged;
+    }, [dailyReactions, myReaction]);
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 py-4 max-w-6xl mx-auto">
             {[...Array(12)].map((_, month) => (
@@ -259,7 +304,7 @@ export default function Calendar({ year }: CalendarProps) {
                     locale={locale}
                     activeDate={activeDate}
                     setActiveDate={setActiveDate}
-                    dailyReactions={dailyReactions}
+                    mergedReactions={mergedReactions}
                     onReactionChange={onReactionChange}
                 />
             ))}

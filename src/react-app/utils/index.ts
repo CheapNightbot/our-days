@@ -27,7 +27,11 @@ const getToday = (dateString: string) => {
 };
 
 // Submit reaction to the backend
-const submitReaction = async (date: string, emoji: string, action: "add" | "remove") => {
+const submitReaction = async (
+    date: string,
+    emoji: string,
+    action: "add" | "remove"
+) => {
     try {
         const response = await fetch("/api/reaction", {
             method: action === "remove" ? "DELETE" : "POST",
@@ -37,14 +41,12 @@ const submitReaction = async (date: string, emoji: string, action: "add" | "remo
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || "Failed to save reaction");
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || `HTTP ${response.status}`);
         }
 
         return true;
     } catch (error) {
-        console.error("API error:", error);
-        // Fallback: save locally anyway so UX isn't broken
         return false;
     }
 };
