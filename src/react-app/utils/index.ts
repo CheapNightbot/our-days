@@ -26,6 +26,29 @@ const getToday = (dateString: string) => {
     return dateString === todayString;
 };
 
+// Submit reaction to the backend
+const submitReaction = async (date: string, emoji: string, action: "add" | "remove") => {
+    try {
+        const response = await fetch("/api/reaction", {
+            method: action === "remove" ? "DELETE" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date, emoji }),
+            credentials: "include", // Important! Sends cookies
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to save reaction");
+        }
+
+        return true;
+    } catch (error) {
+        console.error("API error:", error);
+        // Fallback: save locally anyway so UX isn't broken
+        return false;
+    }
+};
+
 
 export {
     getDaysArray,
@@ -34,4 +57,5 @@ export {
     getPaddingArray,
     getToday,
     getUserLocale,
+    submitReaction
 };

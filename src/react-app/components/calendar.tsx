@@ -1,5 +1,17 @@
-import { Dispatch, SetStateAction, useEffect, useMemo, useState, } from 'react';
-import { getDaysArray, getPaddingArray, getToday, getUserLocale } from '../utils';
+import {
+    Dispatch,
+    SetStateAction,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
+import {
+    getDaysArray,
+    getPaddingArray,
+    getToday,
+    getUserLocale,
+    submitReaction,
+} from '../utils';
 
 interface CalendarProps {
     year: number;
@@ -48,8 +60,9 @@ const MonthCard = ({
         emoji: string;
         action: 'add' | 'remove';
     } | null>(null);
+    const [serverCounts, setServerCounts] = useState<Record<string, { emoji: string; count: number }[]>>({});
 
-    const handleEmojiClick = (day: number, emoji: string) => {
+    const handleEmojiClick = async (day: number, emoji: string) => {
         // Create the full date string FIRST
         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
@@ -63,7 +76,7 @@ const MonthCard = ({
         // Close the picker after reaction
         setActiveDate(null);
 
-        // Update reactions
+        // Update reactions (local state)
         setReactions((prev: Record<string, string>) => {
             // Toggle: if same emoji, remove it. Otherwise, set new one.
             if (prev[dateString] === emoji) {
@@ -72,6 +85,12 @@ const MonthCard = ({
             }
             return { ...prev, [dateString]: emoji };
         });
+
+        // Sync reactions to backend
+        const success = await submitReaction(dateString, emoji, isRemoving ? "remove" : "add");
+        if (!success) {
+            console.warn("Reaction(s) saved locally only ~");
+        }
     };
 
     const toggleDayPicker = (day: number) => {
@@ -81,6 +100,28 @@ const MonthCard = ({
         // If clicking the same date, close it. Otherwise, open it.
         setActiveDate(activeDate === dateString ? null : dateString);
     };
+
+    // Fetch counts when component mounts or date changes
+    useEffect(() => {
+        const fetchCounts = async () => {
+            // Only fetch for days in the current year that have local reactions
+            const datesWithReactions = Object.keys(reactions).filter(d => d.startsWith(year.toString()));
+
+            for (const date of datesWithReactions) {
+                try {
+                    const res = await fetch(`/api/reactions?date=${date}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setServerCounts(prev => ({ ...prev, [date]: data.reactions }));
+                    }
+                } catch (e) {
+                    console.warn(`Failed to fetch counts for ${date}`, e);
+                }
+            }
+        };
+
+        fetchCounts();
+    }, [year, reactions]);
 
     return (
         <div className="border rounded-md overflow-visible shadow-sm hover:shadow-md transition-shadow bg-card/60 min-h-81.5">
@@ -156,16 +197,27 @@ const MonthCard = ({
                                     className="absolute left-1/2 -translate-x-1/2 top-full mt-1 animate-in slide-in-from-top-50 fade-in-50 transition-all duration-300 ease-in-out z-20"
                                 >
                                     <div className="bg-sidebar backdrop-blur-sm rounded-md shadow-md border border-border px-1.5 py-1 flex gap-1.5">
-                                        {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => (
-                                            <button
-                                                key={emoji}
-                                                onClick={() => handleEmojiClick(day, emoji)}
-                                                className="hover:scale-125 transition-transform active:scale-100"
-                                                aria-label={`Today's mood was: ${emoji}`}
-                                            >
-                                                {emoji}
-                                            </button>
-                                        ))}
+                                        {["😄", "😭", "😡", "😖", "😴", "🤩"].map(emoji => {
+                                            // Find count for this emoji on this date
+                                            const countData = serverCounts[dateString]?.find(r => r.emoji === emoji);
+                                            const count = countData?.count || 0;
+
+                                            return (
+                                                <button
+                                                    key={emoji}
+                                                    onClick={() => handleEmojiClick(day, emoji)}
+                                                    className="relative hover:scale-125 transition-transform active:scale-100 flex flex-col items-center"
+                                                    aria-label={`Today's mood was: ${emoji}`}
+                                                >
+                                                    <span className='text-sm'>{emoji}</span>
+                                                    {count > 0 && (
+                                                        <span className="text-[9px] text-muted-foreground mt-0.5">
+                                                            {count}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             )}
