@@ -182,11 +182,16 @@ const MonthCard = ({
                             >
                                 {day}
                                 {/* Show saved reaction for this day */}
-                                {reactions[dateString] && (
-                                    <span className="group-hover:scale-110 group-hover:opacity-100 transition-all duration-500 ease-in-out absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6 text-xs opacity-70 animate-in blur-in">
-                                        {reactions[dateString]}
+                                {serverCounts[dateString]?.slice(0, 2).map((item, i) => (
+                                    <span
+                                        key={item.emoji}
+                                        className={`absolute text-xs opacity-70 animate-in blur-in
+                                                ${i === 0 ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/6' :
+                                                'bottom-0 left-1/2 translate-x-2 translate-y-1/6 text-[10px]'}`}
+                                    >
+                                        {item.emoji}
                                     </span>
-                                )}
+                                ))}
                             </button>
 
                             {/* Emoji Picker - Only show for TODAY and active day */}
