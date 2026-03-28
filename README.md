@@ -48,8 +48,8 @@ git clone https://github.com/CheapNightbot/our-days.git
 cd our-days
 npm run setup
 
-# Deploy to Cloudflare
-npm run deploy
+# Build & Deploy to Cloudflare
+npm run build && npm run deploy
 ```
 
 ## 📚 Available Scripts
@@ -83,7 +83,7 @@ npm run deploy
 
 | Command | Description |
 |---------|-------------|
-| `npm run deploy` | Build frontend + deploy to Cloudflare Pages |
+| `npm run deploy` | Deploy to Cloudflare Pages |
 
 ## 🔐 Privacy & Security
 
