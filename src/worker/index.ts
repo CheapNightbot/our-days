@@ -20,6 +20,18 @@ app.post("/api/reaction", async (c) => {
     try {
         const { date, emoji } = await c.req.json();
 
+        // Validate date is TODAY (don't allow reactions to past and future days/years)
+        const today = new Date();
+        const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        if (date !== todayString) {
+            console.warn(`⚠️ Blocked reaction for invalid date: ${date} (expected: ${todayString})`);
+            return c.json({
+                error: 'Reactions are only allowed for today',
+                allowedDate: todayString
+            }, 403); // 403 = Forbidden
+        }
+
         // Get or create anonymous token from cookie
         let token = c.req.header("Cookie")?.match(/mood_token=([^;]+)/)?.[1];
         if (!token) {
