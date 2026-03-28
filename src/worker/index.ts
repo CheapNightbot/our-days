@@ -137,6 +137,18 @@ app.delete("/api/reaction", async (c) => {
     try {
         const { date } = await c.req.json();
 
+        //  Validate date is TODAY
+        const today = new Date();
+        const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        if (date !== todayString) {
+            console.warn(`⚠️ Blocked deletion for invalid date: ${date} (expected: ${todayString})`);
+            return c.json({
+                error: 'Reactions can only be modified for today',
+                allowedDate: todayString
+            }, 403);
+        }
+
         // Get token from cookie
         const token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
         if (!token) return c.json({ error: 'No token' }, 401);
