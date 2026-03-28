@@ -22,7 +22,7 @@ A social mood tracking calendar where users can share their daily emotions with 
 | Frontend | React 19 + TypeScript + TailwindCSS |
 | Backend | Cloudflare Workers + Hono |
 | Database | Cloudflare D1 (SQLite) |
-| Deployment | Cloudflare Pages |
+| Deployment | Cloudflare Workers |
 
 ## 🚀 Quick Start
 
