@@ -22,7 +22,7 @@
 
 		"cf-typegen": "wrangler types",
 		"lint": "eslint .",
-		"deploy": "npm run build && wrangler deploy"
+		"deploy": "wrangler deploy"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.2.2",
