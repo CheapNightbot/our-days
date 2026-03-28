@@ -5,7 +5,7 @@
 
 A social mood tracking calendar where users can share their daily emotions with emojis! Built with React, Cloudflare Workers, and D1 database.
 
-![Our Days Demo](screenshot.png)
+<img src="https://github.com/user-attachments/assets/5eac6543-d759-4cb7-8345-d0aa68541bd6" alt="Our Days Demo" width="960" height="540" /> 
 
 ## ✨ Features
 
