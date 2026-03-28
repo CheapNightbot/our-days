@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 const app = new Hono<{ Bindings: Env }>();
+const ALLOWED_EMOJIS = ["😄", "😭", "😡", "😖", "😴", "🤩"];
 
 // Enable CORS
 app.use('*', async (c, next) => {
@@ -20,6 +21,24 @@ app.post("/api/reaction", async (c) => {
     try {
         const { date, emoji } = await c.req.json();
 
+        // Check date matches YYYY-MM-DD format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return c.json({ error: 'Invalid date format (expected YYYY-MM-DD)' }, 400);
+        }
+
+        // Extract and validate year (2026 to current year)
+        const year = parseInt(date.split('-')[0]);
+        const currentYear = new Date().getFullYear();
+        if (year < 2026 || year > currentYear) {
+            console.warn(`⚠️ Blocked reaction for invalid year: ${year}`);
+            return c.json({
+                error: 'Invalid year',
+                allowedRange: '2026 - current year',
+                receivedYear: year
+            }, 400);
+        }
+
         // Validate date is TODAY (don't allow reactions to past and future days/years)
         const today = new Date();
         const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -30,6 +49,10 @@ app.post("/api/reaction", async (c) => {
                 error: 'Reactions are only allowed for today',
                 allowedDate: todayString
             }, 403); // 403 = Forbidden
+        }
+
+        if (!ALLOWED_EMOJIS.includes(emoji)) {
+            return c.json({ error: 'Invalid emoji', allowed: ALLOWED_EMOJIS }, 400);
         }
 
         // Get or create anonymous token from cookie
@@ -89,6 +112,24 @@ app.get("/api/reactions", async (c) => {
             return c.json({ error: "Date parameter required" }, 400);
         }
 
+        // Check date matches YYYY-MM-DD format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return c.json({ error: 'Invalid date format (expected YYYY-MM-DD)' }, 400);
+        }
+
+        // Extract and validate year (2026 to current year)
+        const year = parseInt(date.split('-')[0]);
+        const currentYear = new Date().getFullYear();
+        if (year < 2026 || year > currentYear) {
+            console.warn(`⚠️ Blocked fetch for invalid year: ${year}`);
+            return c.json({
+                error: 'Invalid year',
+                allowedRange: '2026 - current year',
+                receivedYear: year
+            }, 400);
+        }
+
         // Get current user's token
         const token = c.req.header('Cookie')?.match(/mood_token=([^;]+)/)?.[1];
         let currentTokenHash = null;
@@ -137,6 +178,12 @@ app.delete("/api/reaction", async (c) => {
     try {
         const { date } = await c.req.json();
 
+        // Check date matches YYYY-MM-DD format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return c.json({ error: 'Invalid date format (expected YYYY-MM-DD)' }, 400);
+        }
+
         //  Validate date is TODAY
         const today = new Date();
         const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -180,6 +227,25 @@ app.get('/api/reactions/bulk', async (c) => {
     try {
         const year = c.req.query('year');
         if (!year) return c.json({ error: 'Year parameter required' }, 400);
+
+        // Check year format (must be 4 digits)
+        const yearRegex = /^\d{4}$/;
+        if (!yearRegex.test(year)) {
+            return c.json({ error: 'Invalid year format (expected YYYY)' }, 400);
+        }
+
+        // Check year range (2026 to current year)
+        const yearNum = parseInt(year);
+        const currentYear = new Date().getFullYear();
+        if (yearNum < 2026 || yearNum > currentYear) {
+            console.warn(`⚠️ Blocked bulk fetch for invalid year: ${yearNum}`);
+            return c.json({
+                error: 'Invalid year',
+                allowedRange: '2026 - current year',
+                receivedYear: yearNum
+            }, 400);
+        }
+
 
         const db = c.env.DB;
 
